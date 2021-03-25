@@ -1,0 +1,69 @@
+# This is a basic workflow to help you get started with Actions
+
+name: SGSI_Build
+
+on: 
+  #releasepush:
+    #pushbuild
+
+  watch: 
+      types: [started]
+    
+env:              
+  ROM_URL: https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip
+  ZIP_NAME: test.zip
+  OS_TYPE: Pixel
+  BUILD_TYPE: AB
+  REPACK_NAME: test_action.7z
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+
+    steps:
+       - name: Checkout
+         uses: actions/checkout@main
+       
+           
+       - name: Setting up the SPICES
+         run: |
+            sudo -E apt-get -qq update
+            sudo -E apt-get -qq install git openjdk-8-jdk wget
+            sudo -E apt-get -qq install git zip unzip curl
+
+       - name: Cloneing...
+         run: |
+             git clone https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 SGSI-build-tool
+           
+       - name: Download zip...
+         run: |
+            cd SGSI-build-tool
+            mkdir ./tmp
+            cd ./tmp
+            sudo wget $ROM_URL -O $ZIP_NAME && ls
+            
+       - name: Setup Tool Utils...
+         run: |
+            cd SGSI-build-tool
+            sudo bash ./setup.sh
+
+       - name: Building SGSI...
+         run: |
+            cd SGSI-build-tool
+            sudo bash ./make.sh --$BUILD_TYPE $OS_TYPE $ZIP_NAME --fix-bug
+
+       - name: Repack output file ...
+         run: |            
+             cd SGSI-build-tool
+             pwd
+             7za a ./$REPACK_NAME ./SGSI/*
+             cd ./SGSI
+
+       - name: Upload SGSI to WeTransfer...
+         run: |
+           cd SGSI-build-tool
+           pwd
+           ls $REPACK_NAME
+           curl -sL https://git.io/file-transfer | sh
+           ./transfer wet ./$REPACK_NAME
