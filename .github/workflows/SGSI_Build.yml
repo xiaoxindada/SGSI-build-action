@@ -2,19 +2,20 @@
 
 name: SGSI_Build
 
-on: 
-  #releasepush:
-    #pushbuild
-
-  watch: 
-      types: [started]
+on:
+  watch:
+    types: [started]
     
 env:              
   ROM_URL: https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip
   ZIP_NAME: test.zip
   OS_TYPE: Pixel
-  BUILD_TYPE: AB
-  REPACK_NAME: test_action.7z
+  BUILD_TYPE: 'ab'
+  REPACK_NAME: test_action.zip
+  VERSION: 12
+  upload_WeTransfer: 'true'
+  upload_action-gh-release: 'false'
+  SETUP: 'true'
   
 jobs:
   build:
@@ -28,42 +29,51 @@ jobs:
            
        - name: Setting up the SPICES
          run: |
-            sudo -E apt-get -qq update
-            sudo -E apt-get -qq install git openjdk-8-jdk wget
-            sudo -E apt-get -qq install git zip unzip curl
-
-       - name: Cloneing...
+            sudo apt-get install -y git openjdk-8-jdk wget git zip unzip curl
+       - name: Cloning...
          run: |
-             git clone https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 SGSI-build-tool
+             git clone https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 $GITHUB_WORKSPACE/SGSI-build-tool
            
        - name: Download zip...
          run: |
-            cd SGSI-build-tool
+            cd $GITHUB_WORKSPACE/SGSI-build-tool
             mkdir ./tmp
             cd ./tmp
             sudo wget $ROM_URL -O $ZIP_NAME && ls
             
        - name: Setup Tool Utils...
+         if: env.SETUP == 'true'
          run: |
-            cd SGSI-build-tool
-            sudo bash ./setup.sh
-
-       - name: Building SGSI...
+            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
+       - name: Building AB DEVICES SGSI...
+         if: env.BUILD_TYPE == 'AB' || env.BUILD_TYPE == 'ab'
          run: |
-            cd SGSI-build-tool
-            sudo bash ./make.sh --$BUILD_TYPE $OS_TYPE $ZIP_NAME --fix-bug
-
+            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --AB $OS_TYPE $ZIP_NAME --fix-bug
+       - name: Building A-only DEVICES SGSI...
+         if: env.BUILD_TYPE == 'a-only'
+         run: |
+            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only $OS_TYPE $ZIP_NAME --fix-bug            
        - name: Repack output file ...
          run: |            
-             cd SGSI-build-tool
+             cd $GITHUB_WORKSPACE/SGSI-build-tool
              pwd
-             7za a ./$REPACK_NAME ./SGSI/*
-             cd ./SGSI
-
+             zip -r $REPACK_NAME ./SGSI/*
+             ls "$REPACK_NAME"
        - name: Upload SGSI to WeTransfer...
+         if: env.upload_WeTransfer == 'true' 
          run: |
-           cd SGSI-build-tool
+           cd $GITHUB_WORKSPACE/SGSI-build-tool
            pwd
-           ls $REPACK_NAME
+           ls "$REPACK_NAME"
            curl -sL https://git.io/file-transfer | sh
            ./transfer wet ./$REPACK_NAME
+       - name: Upload SGSI to action-gh-release...
+         if: env.upload_action-gh-release == 'true'
+         uses: softprops/action-gh-release@v1
+         with:
+           files: ${{ github.workspace }}/SGSI-build-tool/${{ env.REPACK_NAME }}
+           name: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-unpack
+           tag_name: 12
+           #body: Use actions auto bulid
+         env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}       
