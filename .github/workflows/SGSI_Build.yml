@@ -7,12 +7,12 @@ on:
     types: [started]
     
 env:              
-  ROM_URL: https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip
-  ZIP_NAME: test.zip
-  OS_TYPE: Pixel
+  ROM_URL: 'https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip'
+  ZIP_NAME: 'update.zip'
+  OS_TYPE: 'Pixel'
   BUILD_TYPE: 'ab'
-  REPACK_NAME: test_action.zip
-  VERSION: 12
+  REPACK_NAME: 'SGSI.zip'
+  VERSION: '12'
   upload_WeTransfer: 'true'
   upload_action-gh-release: 'false'
   SETUP: 'true'
@@ -21,15 +21,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-
     steps:
        - name: Checkout
          uses: actions/checkout@main
        
+       - name: Clean Up
+         run: |       
+           docker rmi `docker images -q`
+           sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d
+           sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+           sudo -E apt-get update
+           sudo -E apt-get -y autoremove --purge
+           sudo -E apt-get clean
+           df -h
            
        - name: Setting up the SPICES
          run: |
-            sudo apt-get install -y git openjdk-8-jdk wget git zip unzip curl
+            sudo apt-get install -y git wget git zip unzip curl axel
+
        - name: Cloning...
          run: |
              git clone https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 $GITHUB_WORKSPACE/SGSI-build-tool
@@ -38,27 +47,34 @@ jobs:
          run: |
             cd $GITHUB_WORKSPACE/SGSI-build-tool
             mkdir ./tmp
-            cd ./tmp
-            sudo wget $ROM_URL -O $ZIP_NAME && ls
+            axel -n $(nproc) -U "Mozilla/5.0" $ROM_URL -o "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/$ZIP_NAME" || wget -U "Mozilla/5.0" $ROM_URL -O "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/$ZIP_NAME"
+            echo "zip_file: $(ls "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/")"
             
        - name: Setup Tool Utils...
          if: env.SETUP == 'true'
          run: |
+            sudo sed -i 's/USE_MIRROR_FOR_PIP\=true/USE_MIRROR_FOR_PIP\=false/' $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
             sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
+            sudo apt-get -y --purge remove "adoptopenjdk-11-hotspot"
+            java -version
+            
        - name: Building AB DEVICES SGSI...
          if: env.BUILD_TYPE == 'AB' || env.BUILD_TYPE == 'ab'
          run: |
             sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --AB $OS_TYPE $ZIP_NAME --fix-bug
+
        - name: Building A-only DEVICES SGSI...
          if: env.BUILD_TYPE == 'a-only'
          run: |
-            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only $OS_TYPE $ZIP_NAME --fix-bug            
+            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only $OS_TYPE $ZIP_NAME --fix-bug     
+
        - name: Repack output file ...
          run: |            
              cd $GITHUB_WORKSPACE/SGSI-build-tool
              pwd
              zip -r $REPACK_NAME ./SGSI/*
              ls "$REPACK_NAME"
+
        - name: Upload SGSI to WeTransfer...
          if: env.upload_WeTransfer == 'true' 
          run: |
@@ -67,6 +83,7 @@ jobs:
            ls "$REPACK_NAME"
            curl -sL https://git.io/file-transfer | sh
            ./transfer wet ./$REPACK_NAME
+
        - name: Upload SGSI to action-gh-release...
          if: env.upload_action-gh-release == 'true'
          uses: softprops/action-gh-release@v1
@@ -76,4 +93,4 @@ jobs:
            tag_name: 12
            #body: Use actions auto bulid
          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}       
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}           
