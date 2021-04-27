@@ -1,5 +1,8 @@
 # SGSI-build-action
 
+**不要直接在此仓库跑包，跑包请fork此仓库到然后去你自己的GitHub里再跑 ！**  
+**Don't build directly in this warehouse, please fork this warehouse first, and then go to your own warehouse to build!**
+
 ## 使用方法:
 ```
 1. fork此仓库
