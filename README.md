@@ -16,9 +16,9 @@
 ```
  
 ## 输出结果
-如果将rom上传至Release下载 请修改yml的 upload_action-gh-release: 'false' -> 'true' 
-每次构建成功后山除掉 自动上传的的版本否则下次将会上传失败
-结果在[Release](../../releases)下载
-
-如果将rom上传至WeTransfer下载 清修改yml的 upload_WeTransfer: 'false' -> 'true'
-上传好后的下载链接，留意输出结果 Download Link:
+结果在[Release](../../releases)下载  
+大于2G的文件将自动采用分卷压缩上传  
+如果上传结果为分卷压缩，下载所有分区卷，并使用以下命令进行合并:
+```
+cat upload/* > SGSI.zip
+```

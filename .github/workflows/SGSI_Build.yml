@@ -9,17 +9,16 @@ on:
 env:              
   ROM_URL: 'https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip'
   ZIP_NAME: 'update.zip'
-  OS_TYPE: 'Pixel'
+  OS_TYPE: 'Generic'
   BUILD_TYPE: 'ab'
   REPACK_NAME: 'SGSI.zip'
   VERSION: '12'
-  upload_WeTransfer: 'true'
-  upload_action-gh-release: 'false'
+  upload_action-gh-release: 'true'
   SETUP: 'true'
   
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
        - name: Checkout
@@ -72,25 +71,22 @@ jobs:
          run: |            
              cd $GITHUB_WORKSPACE/SGSI-build-tool
              pwd
+             mkdir -p upload
              zip -r $REPACK_NAME ./SGSI/*
-             ls "$REPACK_NAME"
-
-       - name: Upload SGSI to WeTransfer...
-         if: env.upload_WeTransfer == 'true' 
-         run: |
-           cd $GITHUB_WORKSPACE/SGSI-build-tool
-           pwd
-           ls "$REPACK_NAME"
-           curl -sL https://git.io/file-transfer | sh
-           ./transfer wet ./$REPACK_NAME
+             if [[ $(du -sb "$REPACK_NAME" | awk '{print $1}') -gt 2097152000 ]];then
+                 echo -e "split packaging..."
+                 tar -cpzf - "$REPACK_NAME" | split -d -b 1024m - "upload/$REPACK_NAME"
+             else
+                 mv $REPACK_NAME upload/$REPACK_NAME
+             fi
+             ls "upload"
 
        - name: Upload SGSI to action-gh-release...
          if: env.upload_action-gh-release == 'true'
-         uses: softprops/action-gh-release@v1
+         uses: ncipollo/release-action@v1.8.6
          with:
-           files: ${{ github.workspace }}/SGSI-build-tool/${{ env.REPACK_NAME }}
+           artifacts: ${{ github.workspace }}/SGSI-build-tool/upload/*
            name: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-unpack
-           tag_name: 12
-           #body: Use actions auto bulid
-         env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}           
+           tag: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-${{ github.run_number }}
+           body: Use actions auto bulid by Xiaoxindada
+           token: ${{ secrets.GITHUB_TOKEN }}
