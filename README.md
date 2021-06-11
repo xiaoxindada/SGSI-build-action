@@ -22,3 +22,6 @@
 ```
 cat upload/* > SGSI.zip
 ```
+
+## 友情链接
+Android R版:[Action-SGSI-build](https://github.com/XayahSuSuSu/Action-SGSI-build)
