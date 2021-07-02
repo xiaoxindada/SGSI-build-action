@@ -88,5 +88,5 @@ jobs:
            artifacts: ${{ github.workspace }}/SGSI-build-tool/upload/*
            name: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-unpack
            tag: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-${{ github.run_number }}
-           body: Use actions auto bulid by Xiaoxindada
+           bodyFile: "${{ github.workspace }}/SGSI-build-tool/SGSI/build_info.txt"
            token: ${{ secrets.GITHUB_TOKEN }}
