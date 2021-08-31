@@ -1,3 +1,7 @@
+<div align="center">
+	<span style="font-weight: bold"> English | <a href=README_CN.md> 中文 </a> </span>
+</div>
+
 ## SGSI-build-action
 
 Don't build directly in this warehouse, please fork this warehouse first, and then go to your own warehouse to build!

@@ -1,3 +1,7 @@
+<div align="center">
+	<span style="font-weight: bold"> 中文 | <a href=README.md> English </a> </span>
+</div>
+
 # SGSI-build-action
 
 **不要直接在此仓库跑包，跑包请fork此仓库到然后去你自己的GitHub里再跑 ！**  
