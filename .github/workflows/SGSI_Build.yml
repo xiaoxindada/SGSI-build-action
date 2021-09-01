@@ -7,7 +7,7 @@ on:
     types: [started]
     
 env:              
-  ROM_URL: 'https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip'
+  ROM_URL: 'https://www.priiiiyocloud.workers.dev/0://redfin-spb4.210715.011-factory-05b19986/redfin-spb4.210715.011/image-redfin-spb4.210715.011.zip'
   ZIP_NAME: 'update.zip'
   OS_TYPE: 'Generic'
   BUILD_TYPE: 'ab'
