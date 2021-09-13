@@ -3,30 +3,15 @@
 name: SGSI_Build
 
 on:
-  workflow_dispatch:
-    inputs:
-      ROM_URL:
-        description: 'Url link'
-        required: true
-        default: 'https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip'
-      FIRMWARE_NAME:
-        description: 'Firmware name'
-        required: true
-        default: 'update.zip'
-      OS_TYPE:
-        description: 'ROM OS type'
-        required: true
-        default: 'Generic'
-      BUILD_TYPE:
-        description: 'ROM build type: ab or a'
-        required: true
-        default: 'ab'        
-      REPACK_NAME:
-        description: 'ROM repackage name'
-        required: true
-        default: 'SGSI.zip'
-
-env:
+  watch:
+    types: [started]
+    
+env:              
+  ROM_URL: 'https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip'
+  ZIP_NAME: 'update.zip'
+  OS_TYPE: 'Generic'
+  BUILD_TYPE: 'ab'
+  REPACK_NAME: 'SGSI.zip'
   VERSION: '12'
   upload_action-gh-release: 'true'
   SETUP: 'true'
@@ -61,7 +46,7 @@ jobs:
          run: |
             cd $GITHUB_WORKSPACE/SGSI-build-tool
             mkdir ./tmp
-            wget -U "Mozilla/5.0" ${{ github.event.inputs.ROM_URL }} -O "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/${{ github.event.inputs.FIRMWARE_NAME }}"
+            wget -U "Mozilla/5.0" $ROM_URL -O "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/$ZIP_NAME"
             echo "zip_file: $(ls "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/")"
             
        - name: Setup Tool Utils...
@@ -73,26 +58,26 @@ jobs:
             java -version
             
        - name: Building AB DEVICES SGSI...
-         if: ${{ github.event.inputs.BUILD_TYPE }} == 'AB' || ${{ github.event.inputs.BUILD_TYPE }} == 'ab'
+         if: env.BUILD_TYPE == 'AB' || env.BUILD_TYPE == 'ab'
          run: |
-            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --AB ${{ github.event.inputs.OS_TYPE }} ${{ github.event.inputs.FIRMWARE_NAME }} --fix-bug
+            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --AB $OS_TYPE $ZIP_NAME --fix-bug
 
        - name: Building A-only DEVICES SGSI...
-         if: ${{ github.event.inputs.BUILD_TYPE }} == 'a-only'
+         if: env.BUILD_TYPE == 'a-only'
          run: |
-            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only ${{ github.event.inputs.OS_TYPE }} ${{ github.event.inputs.FIRMWARE_NAME }} --fix-bug     
+            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only $OS_TYPE $ZIP_NAME --fix-bug     
 
        - name: Repack output file ...
          run: |            
              cd $GITHUB_WORKSPACE/SGSI-build-tool
              pwd
              mkdir -p upload
-             zip -r ${{ github.event.inputs.REPACK_NAME }} ./SGSI/*
-             if [[ $(du -sb "${{ github.event.inputs.REPACK_NAME }}" | awk '{print $1}') -gt 2097152000 ]];then
+             zip -r $REPACK_NAME ./SGSI/*
+             if [[ $(du -sb "$REPACK_NAME" | awk '{print $1}') -gt 2097152000 ]];then
                  echo -e "split packaging..."
-                 tar -cpzf - "${{ github.event.inputs.REPACK_NAME }}" | split -d -b 1024m - "upload/${{ github.event.inputs.REPACK_NAME }}"
+                 tar -cpzf - "$REPACK_NAME" | split -d -b 1024m - "upload/$REPACK_NAME"
              else
-                 mv ${{ github.event.inputs.REPACK_NAME }} upload/${{ github.event.inputs.REPACK_NAME }}
+                 mv $REPACK_NAME upload/$REPACK_NAME
              fi
              ls "upload"
 
@@ -101,7 +86,7 @@ jobs:
          uses: ncipollo/release-action@v1.8.6
          with:
            artifacts: ${{ github.workspace }}/SGSI-build-tool/upload/*
-           name: xiaoxinSGSI-${{ github.event.inputs.OS_TYPE }}-${{ github.event.inputs.BUILD_TYPE }}-Android${{ env.VERSION }}-unpack
-           tag: xiaoxinSGSI-${{ github.event.inputs.OS_TYPE }}-${{ github.event.inputs.BUILD_TYPE }}-Android${{ env.VERSION }}-${{ github.run_number }}
+           name: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-unpack
+           tag: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-${{ github.run_number }}
            bodyFile: "${{ github.workspace }}/SGSI-build-tool/SGSI/build_info.txt"
            token: ${{ secrets.GITHUB_TOKEN }}
