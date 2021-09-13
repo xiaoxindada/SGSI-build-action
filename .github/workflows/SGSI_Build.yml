@@ -65,7 +65,7 @@ jobs:
             echo "zip_file: $(ls "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/")"
             
        - name: Setup Tool Utils...
-         if: ${{ env.SETUP == 'true' }}
+         if: env.SETUP == 'true'
          run: |
             sudo sed -i 's/USE_MIRROR_FOR_PIP\=true/USE_MIRROR_FOR_PIP\=false/' $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
             sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
@@ -73,12 +73,12 @@ jobs:
             java -version
             
        - name: Building AB DEVICES SGSI...
-         if: ${{ github.event.inputs.BUILD_TYPE == 'AB' }} || ${{ github.event.inputs.BUILD_TYPE == 'ab' }}
+         if: ${{ github.event.inputs.BUILD_TYPE }} == 'AB' || ${{ github.event.inputs.BUILD_TYPE }} == 'ab'
          run: |
             sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --AB ${{ github.event.inputs.OS_TYPE }} ${{ github.event.inputs.FIRMWARE_NAME }} --fix-bug
 
        - name: Building A-only DEVICES SGSI...
-         if: ${{ github.event.inputs.BUILD_TYPE == 'aonly' }} || ${{ github.event.inputs.BUILD_TYPE == 'AONLY' }}
+         if: ${{ github.event.inputs.BUILD_TYPE }} == 'a-only'
          run: |
             sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only ${{ github.event.inputs.OS_TYPE }} ${{ github.event.inputs.FIRMWARE_NAME }} --fix-bug     
 
