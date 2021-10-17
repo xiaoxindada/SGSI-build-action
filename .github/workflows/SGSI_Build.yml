@@ -1,33 +1,36 @@
-# This is a basic workflow to help you get started with Actions
-
 name: SGSI_Build
 
 on:
-  watch:
-    types: [started]
-    
-env:              
-  ROM_URL: 'https://dl.google.com/developers/android/sc/images/ota/redfin-ota-spp2.210219.008-3d61e529.zip'
-  ZIP_NAME: 'update.zip'
-  OS_TYPE: 'Generic'
-  BUILD_TYPE: 'ab'
-  REPACK_NAME: 'SGSI.zip'
-  VERSION: '12'
-  upload_action-gh-release: 'true'
-  SETUP: 'true'
-  
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-20.04
 
     steps:
-       - name: Checkout
-         uses: actions/checkout@main
-       
-       - name: Clean Up
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Load Configuration
+        uses: falti/dotenv-action@v0.2.5
+        id: config
+        with:
+          path: config.env
+
+       - name: Check Configuration
+         run: |
+          function required () { if ! [[ "$1" ]]; then echo "$2 variable can't be null." && exit 1; fi }
+          required "${{ steps.config.outputs.rom_url }}" "ROM_URL config"
+          required "${{ steps.config.outputs.build_type }}" "BUILD_TYPE config"
+          required "${{ steps.config.outputs.os_type }}" "OS_TYPE config"
+          required "${{ steps.config.outputs.zip_name }}" "ZIP_NAME config"
+          required "${{ steps.config.outputs.version }}" "VERSION config"
+          required "${{ steps.config.outputs.repack_name }}" "REPACK_NAME config"
+
+       - name: Cleanup workspace
          uses: rokibhasansagar/slimhub_actions@main
            
-       - name: Setting up the SPICES
+       - name: Initializing Environment
          run: |
             sudo apt-get install -y git wget git zip unzip curl axel
 
@@ -35,51 +38,49 @@ jobs:
          run: |
              git clone --recurse-submodules https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 $GITHUB_WORKSPACE/SGSI-build-tool
            
-       - name: Download zip...
+       - name: Download ROM
          run: |
             cd $GITHUB_WORKSPACE/SGSI-build-tool
             mkdir ./tmp
-            wget -U "Mozilla/5.0" $ROM_URL -O "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/$ZIP_NAME"
+            wget -U "Mozilla/5.0" "${{ steps.config.outputs.rom_url }}" -O "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/"${{ steps.config.outputs.zip_name }}"
             echo "zip_file: $(ls "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/")"
             
-       - name: Setup Tool Utils...
-         if: env.SETUP == 'true'
+       - name: Setup sGSI tools requirements
          run: |
             sudo sed -i 's/USE_MIRROR_FOR_PIP\=true/USE_MIRROR_FOR_PIP\=false/' $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
             sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
             # sudo apt-get -y --purge remove "adoptopenjdk-11-hotspot"
             java -version
             
-       - name: Building AB DEVICES SGSI...
-         if: env.BUILD_TYPE == 'AB' || env.BUILD_TYPE == 'ab'
+       - name: Build AB Devices
+         if: "${{ steps.config.outputs.build_type == 'AB' }}"
          run: |
-            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --AB $OS_TYPE $ZIP_NAME --fix-bug
+            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --AB "${{ steps.config.outputs.os_type }}" "${{ steps.config.outputs.zip_name }}" --fix-bug
 
-       - name: Building A-only DEVICES SGSI...
-         if: env.BUILD_TYPE == 'a-only'
+       - name: Build Aonly Devices
+         if: "${{ steps.config.outputs.build_type == 'a-only' }}"
          run: |
-            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only $OS_TYPE $ZIP_NAME --fix-bug     
+            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only "${{ steps.config.outputs.os_type }}" "${{ steps.config.outputs.zip_name }}" --fix-bug     
 
-       - name: Repack output file ...
+       - name: Repack Output File
          run: |            
              cd $GITHUB_WORKSPACE/SGSI-build-tool
              pwd
              mkdir -p upload
-             zip -r $REPACK_NAME ./SGSI/*
-             if [[ $(du -sb "$REPACK_NAME" | awk '{print $1}') -gt 2097152000 ]];then
+             zip -r "${{ steps.config.outputs.repack_name }}" ./SGSI/*
+             if [[ $(du -sb ""${{ steps.config.outputs.repack_name }}"" | awk '{print $1}') -gt 2097152000 ]];then
                  echo -e "split packaging..."
-                 tar -cpzf - "$REPACK_NAME" | split -d -b 1024m - "upload/$REPACK_NAME"
+                 tar -cpzf - "${{ steps.config.outputs.repack_name }}" | split -d -b 1024m - "upload/"${{ steps.config.outputs.repack_name }}"
              else
-                 mv $REPACK_NAME upload/$REPACK_NAME
+                 mv "${{ steps.config.outputs.repack_name }}" upload/"${{ steps.config.outputs.repack_name }}"
              fi
              ls "upload"
 
-       - name: Upload SGSI to action-gh-release...
-         if: env.upload_action-gh-release == 'true'
+       - name: Upload SGSI to GH-Release
          uses: ncipollo/release-action@v1.8.6
          with:
            artifacts: ${{ github.workspace }}/SGSI-build-tool/upload/*
-           name: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-unpack
-           tag: xiaoxinSGSI-${{ env.OS_TYPE }}-${{ env.BUILD_TYPE }}-Android${{ env.VERSION }}-${{ github.run_number }}
-           bodyFile: "${{ github.workspace }}/SGSI-build-tool/SGSI/build_info.txt"
+           name: "${{ steps.config.outputs.os_type }}"${{ steps.config.outputs.build_type }}"-Android"${{ steps.config.outputs.version }}"-unpack
+           tag: "${{ steps.config.outputs.os_type }}"${{ steps.config.outputs.build_type }}"-"${{ steps.config.outputs.version }}"-${{ github.run_number }}
+           bodyFile: "${{ github.workspace}}/SGSI-build-tool/SGSI/build_info.txt"
            token: ${{ secrets.GITHUB_TOKEN }}
