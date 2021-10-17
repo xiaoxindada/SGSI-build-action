@@ -10,7 +10,7 @@ Don't build directly in this warehouse, please fork this warehouse first, and th
 ```
 
 1. Fork this warehouse
-2. Edit SGSI_Build.yml:
+2. Edit Config.env:
      ROM_URL: link for your download
      ZIP_NAME: The name of the package downloaded for you
      OS_TYPE: The type of rom you want to run
