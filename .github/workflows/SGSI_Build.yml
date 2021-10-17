@@ -25,20 +25,13 @@ jobs:
          uses: actions/checkout@main
        
        - name: Clean Up
-         run: |       
-           docker rmi `docker images -q`
-           sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d
-           sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
-           sudo -E apt-get update
-           sudo -E apt-get -y autoremove --purge
-           sudo -E apt-get clean
-           df -h
+         uses: rokibhasansagar/slimhub_actions@main
            
        - name: Setting up the SPICES
          run: |
             sudo apt-get install -y git wget git zip unzip curl axel
 
-       - name: Cloning...
+       - name: Cloning SGSI source code
          run: |
              git clone --recurse-submodules https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 $GITHUB_WORKSPACE/SGSI-build-tool
            
