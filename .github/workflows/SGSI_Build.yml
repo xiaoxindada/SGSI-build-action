@@ -28,54 +28,47 @@ jobs:
           required "${{ steps.config.outputs.version }}" "VERSION config"
           required "${{ steps.config.outputs.repack_name }}" "REPACK_NAME config"
 
-     # - name: Cleanup workspace
-       # uses: rokibhasansagar/slimhub_actions@main
-           
+      - name: Cleanup workspace
+        run: |
+           docker rmi `docker images -q`
+           sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d
+           sudo -E apt-get -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+           sudo -E apt-get update
+           sudo -E apt-get -y autoremove --purge
+           sudo -E apt-get clean 
+           df -h
+         
       - name: Initializing Environment
         run: |
-            sudo apt-get install -y git wget git zip unzip curl axel
+          sudo apt-get install -y git wget git zip unzip curl axel
 
       - name: Cloning SGSI source code
         run: |
-             git clone --recurse-submodules https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 $GITHUB_WORKSPACE/SGSI-build-tool
-           
-      - name: Download ROM
-        run: |
-            cd $GITHUB_WORKSPACE/SGSI-build-tool
-            mkdir ./tmp
-            wget -U "Mozilla/5.0" "${{ steps.config.outputs.rom_url }}" -O "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/${{ steps.config.outputs.zip_name }}"
-            echo "zip_file: $(ls "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/")"
+          git clone --recurse-submodules https://github.com/xiaoxindada/SGSI-build-tool.git -b 12 $GITHUB_WORKSPACE/SGSI-build-tool
             
       - name: Setup sGSI tools requirements
         run: |
-            sudo sed -i 's/USE_MIRROR_FOR_PIP\=true/USE_MIRROR_FOR_PIP\=false/' $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
-            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
-            # sudo apt-get -y --purge remove "adoptopenjdk-11-hotspot"
-            java -version
+          sudo sed -i 's/USE_MIRROR_FOR_PIP\=true/USE_MIRROR_FOR_PIP\=false/' $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
+          sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/setup.sh
+          sudo apt-get -y --purge remove "adoptopenjdk-11-hotspot"
+          java -version
             
-      - name: Build AB Devices
-        if: "${{ steps.config.outputs.build_type == 'AB' }}"
+      - name: Build {{ steps.config.outputs.build_type }} Devices
         run: |
-            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --AB "${{ steps.config.outputs.os_type }}" "${{ steps.config.outputs.zip_name }}" --fix-bug
-
-      - name: Build Aonly Devices
-        if: "${{ steps.config.outputs.build_type == 'a-only' }}"
-        run: |
-            sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/make.sh --a-only "${{ steps.config.outputs.os_type }}" "${{ steps.config.outputs.zip_name }}" --fix-bug     
+          sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/url2SGSI.sh "${{ steps.config.outputs.rom_url }}" "${{ steps.config.outputs.os_type }}" "${{ steps.config.outputs.build_type }}"
 
       - name: Repack Output File
         run: |            
-             cd $GITHUB_WORKSPACE/SGSI-build-tool
-             pwd
-             mkdir -p upload
-             zip -r "${{ steps.config.outputs.repack_name }}" ./SGSI/*
-             if [[ $(du -sb ""${{ steps.config.outputs.repack_name }}"" | awk '{print $1}') -gt 2097152000 ]];then
-                 echo -e "split packaging..."
-                 tar -cpzf - "${{ steps.config.outputs.repack_name }}" | split -d -b 1024m - "upload/${{ steps.config.outputs.repack_name }}"
-             else
-                 mv "${{ steps.config.outputs.repack_name }}" "upload/${{ steps.config.outputs.repack_name }}"
-             fi
-             ls "upload"
+         cd $GITHUB_WORKSPACE/SGSI-build-tool
+         mkdir -p upload
+         zip -r ${{ steps.config.outputs.repack_name }} ./SGSI/*
+         if [[ $(du -sb "${{ steps.config.outputs.repack_name }}" | awk '{print $1}') -gt 2097152000 ]];then
+             echo -e "split packaging..."
+             tar -cpzf - "${{ steps.config.outputs.repack_name }}" | split -d -b 1024m - "upload/${{ steps.config.outputs.repack_name }}"
+         else
+             mv "${{ steps.config.outputs.repack_name }}" "upload/${{ steps.config.outputs.repack_name }}"
+         fi
+         ls "upload"
 
       - name: Upload SGSI to GH-Release
         uses: ncipollo/release-action@v1.8.6
