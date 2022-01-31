@@ -14,7 +14,7 @@ Don't build directly in this warehouse, please fork this warehouse first, and th
      ROM_URL: link for your download
      ZIP_NAME: The name of the package downloaded for you
      OS_TYPE: The type of rom you want to run
-     BUILD_TYPE: The type you need to build (ab|a-only)
+     BUILD_TYPE: The type you need to build (ab|a)
      REPACK_NAME: The name of the package you need to pack
 3. After modification, click Start commit -> Actions tab -> Star -> SGSI-Build
 ```
