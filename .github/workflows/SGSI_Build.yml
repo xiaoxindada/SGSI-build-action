@@ -71,9 +71,9 @@ jobs:
              zip -r "${{ steps.config.outputs.repack_name }}" ./SGSI/*
              if [[ $(du -sb ""${{ steps.config.outputs.repack_name }}"" | awk '{print $1}') -gt 2097152000 ]];then
                  echo -e "split packaging..."
-                 tar -cpzf - "${{ steps.config.outputs.repack_name }}" | split -d -b 1024m - "upload/"${{ steps.config.outputs.repack_name }}"
+                 tar -cpzf - "${{ steps.config.outputs.repack_name }}" | split -d -b 1024m - "upload/${{ steps.config.outputs.repack_name }}"
              else
-                 mv "${{ steps.config.outputs.repack_name }}" upload/"${{ steps.config.outputs.repack_name }}"
+                 mv "${{ steps.config.outputs.repack_name }}" "upload/${{ steps.config.outputs.repack_name }}"
              fi
              ls "upload"
 
