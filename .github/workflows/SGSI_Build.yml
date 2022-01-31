@@ -28,8 +28,8 @@ jobs:
           required "${{ steps.config.outputs.version }}" "VERSION config"
           required "${{ steps.config.outputs.repack_name }}" "REPACK_NAME config"
 
-      - name: Cleanup workspace
-        uses: rokibhasansagar/slimhub_actions@main
+     # - name: Cleanup workspace
+       # uses: rokibhasansagar/slimhub_actions@main
            
       - name: Initializing Environment
         run: |
