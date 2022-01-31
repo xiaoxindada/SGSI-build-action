@@ -43,7 +43,7 @@ jobs:
         run: |
             cd $GITHUB_WORKSPACE/SGSI-build-tool
             mkdir ./tmp
-            wget -U "Mozilla/5.0" "${{ steps.config.outputs.rom_url }}" -O "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/"${{ steps.config.outputs.zip_name }}"
+            wget -U "Mozilla/5.0" "${{ steps.config.outputs.rom_url }}" -O "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/${{ steps.config.outputs.zip_name }}"
             echo "zip_file: $(ls "$GITHUB_WORKSPACE/SGSI-build-tool/tmp/")"
             
       - name: Setup sGSI tools requirements
