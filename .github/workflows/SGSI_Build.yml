@@ -78,5 +78,5 @@ jobs:
           tag: "${{ steps.config.outputs.os_type }}${{ steps.config.outputs.build_type }}-${{ steps.config.outputs.version }}-${{ github.run_number }}"
           bodyFile: "${{ github.workspace}}/SGSI-build-tool/SGSI/build_info.txt"
           token: ${{ secrets.GITHUB_TOKEN }}
-    
+  
     
