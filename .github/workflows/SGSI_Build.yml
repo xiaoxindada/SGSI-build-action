@@ -17,7 +17,7 @@ jobs:
         id: config
         with:
           path: config.env
-
+          
       - name: Check Configuration
         run: |
           function required () { if ! [[ "$1" ]]; then echo "$2 variable can't be null." && exit 1; fi }
