@@ -79,3 +79,4 @@ jobs:
           bodyFile: "${{ github.workspace}}/SGSI-build-tool/SGSI/build_info.txt"
           token: ${{ secrets.GITHUB_TOKEN }}
     
+    
