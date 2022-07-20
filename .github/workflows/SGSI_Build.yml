@@ -55,7 +55,8 @@ jobs:
 
       - name: Build SGSI
         run: |
-          sudo bash $GITHUB_WORKSPACE/SGSI-build-tool/url2SGSI.sh "${{ steps.config.outputs.rom_url }}" "${{ steps.config.outputs.os_type }}" "${{ steps.config.outputs.build_type }}"
+          cd  $GITHUB_WORKSPACE/SGSI-build-tool
+          sudo bash ./url2SGSI.sh "${{ steps.config.outputs.rom_url }}" "${{ steps.config.outputs.os_type }}" "${{ steps.config.outputs.build_type }}"
 
       - name: Repack Output File
         run: |
